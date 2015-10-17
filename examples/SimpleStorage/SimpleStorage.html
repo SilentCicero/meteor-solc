@@ -1,0 +1,25 @@
+<head>
+  <title>SimpleStorage</title>
+</head>
+
+<body>
+  <h1>SimpleStore dApp Demo!</h1>
+    
+    {{> contractInterface}}
+</body>
+
+<template name="contractInterface">    
+    <button class="btn-new">Deploy SimpleStore Contract</button>
+    
+    <button class="btn-set">Set `storedData` to `45`</button>
+    
+    <button class="btn-get">Call `get` method</button>
+    
+    <br /><br />
+    
+    <hr />
+    
+    <br /><br />
+    
+    {{TemplateVar.get 'state'}}
+</template>
