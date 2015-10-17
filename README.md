@@ -1,4 +1,4 @@
-# SOL for Meteor
+# Solidity for Meteor
 The solc package provides a compiler build plugin for the Meteor build tool. It
 handles the compilation of `*.sol` files to JS.
 
