@@ -17,7 +17,7 @@ handles the compilation of `*.sol` files to JS.
 
 ## Installation
 
-    $ meteor add silentcicero:solc@0.2.1
+    $ meteor add silentcicero:solc
 
 ## Examples
 
