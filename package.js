@@ -1,7 +1,7 @@
 Package.describe({
   name: 'silentcicero:solc',
   summary: 'The solc package provides a compiler build plugin for the Meteor build tool.',
-  version: '0.2.2',
+  version: '0.2.5',
   git: 'http://github.com/SilentCicero/meteor-solc'
 });
 
