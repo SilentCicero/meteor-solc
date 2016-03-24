@@ -27,9 +27,28 @@ var fileModeHandler = function (compileStep) {
     
     for (var contractName in results.contracts) {    
         if(contractName == name) {
-            jsContent += "\n\n" + name + ' = ' + ' web3.eth.contract(' +JSON.parse(JSON.stringify(results.contracts[name].interface, null, '\t')).trim() + ')' + '; \n\n';
+            jsContent += "var web3 = {};";
 
-            jsContent += name + ".bytecode = '" + results.contracts[name].bytecode + "'; \n\n";
+            jsContent += "if(typeof window.web3 !== 'undefined')";
+            jsContent += "web3 = window.web3;";
+
+            jsContent += "if(typeof global.web3 !== 'undefined')";
+            jsContent += "    web3 = global.web3;";
+
+            jsContent += "if(typeof window.web3 === 'undefined'";
+            jsContent += "  && typeof global.web3 === 'undefined'";
+            jsContent += "  && typeof Web3 !== 'undefined')";
+            jsContent += "    web3 = new Web3();";
+            
+            jsContent += "\n\n " + name + ' = ' + ' web3.eth.contract(' +JSON.parse(JSON.stringify(results.contracts[name].interface, null, '\t')).trim() + ')' + '; \n\n';
+
+            jsContent += "" + name + ".bytecode = '" + results.contracts[name].bytecode + "'; \n\n";
+            
+            //jsContent += " export { " + name + " as " + name + " };";
+            
+            //jsContent += "module.export = {" + name + ": " + name + "};";
+            
+            console.log(jsContent);
         }
     }
 

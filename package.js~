@@ -8,9 +8,7 @@ Package.describe({
 Package.registerBuildPlugin({
     name: "compileSol",
     use: [
-        "ecmascript@0.3.0",
-        "silentcicero:solc-compiler@0.2.1",
-        "ethereum:web3@0.15.1"
+        "silentcicero:solc-compiler@0.2.1"
     ],
     sources: [
         "plugin/handler.js",
