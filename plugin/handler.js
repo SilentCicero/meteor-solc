@@ -1,63 +1,74 @@
-var contracts = {};
+var solc = Npm.require('solc');
 
-var getCompilerResult = function (compileStep, fileMode) {
-    var content = compileStep.read().toString('utf8');
-    try {      
-        var output = solc.compile(content, 1);
-        
-        if(output['errors'])
-            return compileStep.error({
-                message: "Solidity syntax error: " + output['errors'],
-                sourcePath: compileStep.inputPath
-            });
-        
-        return output;
-    } catch (exception) {
-        return compileStep.error({
-            message: "Solidity syntax error: " + exception,
-            sourcePath: compileStep.inputPath
-        });
-    }
-};
+function has(object, key) {
+  return object ? hasOwnProperty.call(object, key) : false;
+}
 
-var fileModeHandler = function (compileStep) {
-    var results = getCompilerResult(compileStep, true),
-        jsContent = "",
-        name = compileStep.pathForSourceMap.substring(0, compileStep.pathForSourceMap.lastIndexOf('.'));
-    
-    for (var contractName in results.contracts) {    
-        if(contractName == name) {
-            jsContent += "var web3 = {};";
+'use strict';
 
-            jsContent += "if(typeof window.web3 !== 'undefined')";
-            jsContent += "web3 = window.web3;";
+class SolidityCompiler extends CachingCompiler {
+	constructor() {
+		super({
+			compilerName: 'solidity',
+			defaultCacheSize: 1024 * 1024 * 10,
+		});
+	}
 
-            jsContent += "if(typeof global.web3 !== 'undefined')";
-            jsContent += "    web3 = global.web3;";
+	getCacheKey(inputFile) {
+		return inputFile.getSourceHash();
+	}
 
-            jsContent += "if(typeof window.web3 === 'undefined'";
-            jsContent += "  && typeof global.web3 === 'undefined'";
-            jsContent += "  && typeof Web3 !== 'undefined')";
-            jsContent += "    web3 = new Web3();";
-            
-            jsContent += "\n\n " + name + ' = ' + ' web3.eth.contract(' +JSON.parse(JSON.stringify(results.contracts[name].interface, null, '\t')).trim() + ')' + '; \n\n';
+	compileResultSize(compileResult) {
+		return compileResult.source.length + compileResult.sourceMap.length;
+	}
 
-            jsContent += "" + name + ".bytecode = '" + results.contracts[name].bytecode + "'; \n\n";
-            
-            //jsContent += " export { " + name + " as " + name + " };";
-            
-            //jsContent += "module.export = {" + name + ": " + name + "};";
-            
-            console.log(jsContent);
-        }
-    }
+	compileOneFile(inputFile) {
+		var name = inputFile._resourceSlot.inputResource.path.split("/").pop();
+		name = name.split('.')[0];
 
-    compileStep.addJavaScript({
-        path: compileStep.inputPath + '.js',
-        sourcePath: compileStep.inputPath,
-        data: jsContent
-    });
-};
+		var output = solc.compile(inputFile.getContentsAsString(), 1);
 
+		if (has(output, 'errors'))
+			return inputFile.error({
+				message: "Solidity errors: " + String(output.errors)
+			});
+		
+		var results = output,
+			jsContent = "";
 
-Plugin.registerSourceHandler("sol", {}, fileModeHandler);
+		for (var contractName in results.contracts) {
+			if (contractName == name) {
+				jsContent += "var web3 = {};";
+
+				jsContent += "if(typeof window.web3 !== 'undefined')";
+				jsContent += "web3 = window.web3;";
+
+				jsContent += "if(typeof window.web3 === 'undefined'";
+				jsContent += "  && typeof Web3 !== 'undefined')";
+				jsContent += "    web3 = new Web3();";
+
+				jsContent += "\n\n " + name + ' = ' + ' web3.eth.contract(' + JSON.parse(JSON.stringify(results.contracts[name].interface, null, '\t')).trim() + ')' + '; \n\n';
+
+				jsContent += "" + name + ".bytecode = '" + results.contracts[name].bytecode + "'; \n\n";
+			}
+		}
+
+		return {
+			source: jsContent,
+			sourceMap: ''
+		};
+	}
+	
+	addCompileResult(inputFile, compileResult) {
+		inputFile.addJavaScript({
+			path: inputFile.getPathInPackage() + '.js',
+			sourcePath: inputFile.getPathInPackage(),
+			data: compileResult.source,
+			sourceMap: compileResult.sourceMap,
+		});
+	}
+}
+
+Plugin.registerCompiler({
+	extensions: ['sol'],
+}, () => new SolidityCompiler());
